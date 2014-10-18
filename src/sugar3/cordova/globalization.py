@@ -10,12 +10,10 @@ import subprocess
 class Globalization:
     def getPreferredLanguage(self, args, parent, request):
         preferred_language = get_preferred_language()
-        logging.error("The preferred_language : %s", preferred_language)
         parent._client.send_result(request, {"value": preferred_language})
 
     def getLocaleName(self, args, parent, request):
         locale_name = get_locale_name()
-        logging.error("The preferred_language : %s", locale_name)
         parent._client.send_result(request, {"value": locale_name})
 
 
