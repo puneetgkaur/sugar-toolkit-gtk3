@@ -1,16 +1,18 @@
+from jarabe.model import network
 import dbus
 import logging
 
-from jarabe.model import network
 
 _DBUS_SERVICE = 'org.sugarlabs.SugarServices'
 _DBUS_PATH = '/org/sugarlabs/SugarServices'
 
 proxy = None
+
 network_type_name = None
 
 
-class Network(object):
+class Network:
+
     def alert(self, args, parent, request):
         parent._client.send_result(request, network_type_name)
 

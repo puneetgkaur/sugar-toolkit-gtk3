@@ -3,7 +3,7 @@ sugar_PYTHON =              \
 	__init__.py             \
 	accelerometer.py		\
 	camera.py				\
-	cordovasocket.py		\
+	cordovaSocket.py		\
 	device.py				\
 	dialog.py				\
 	globalization.py		\
