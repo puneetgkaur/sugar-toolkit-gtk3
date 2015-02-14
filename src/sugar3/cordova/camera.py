@@ -1,5 +1,7 @@
 import os
 from gi.repository import Gtk
+from gi.repository import GObject,Gdk, Gst
+from gi.repository import GdkX11, GstVideo
 import base64
 import pygame
 import pygame.camera
@@ -12,6 +14,10 @@ import logging
 from sugar3.datastore import datastore
 
 
+GObject.threads_init()
+Gst.init(None)
+
+
 class Camera:
 
     def image_chooser(self, args, parent, request):
@@ -19,12 +25,108 @@ class Camera:
         chooser.show_image_chooser(parent)
 
     def webcam(self, args, parent, request):
-        filename = pygame_camera()
-        fh = open(filename)
-        string = fh.read()
-        fh.close()
-        encoded_string = base64.b64encode(string)
-        parent._client.send_result(request, encoded_string)
+        webcam = Webcam(parent,request)
+        webcam.run()
+        #filename = pygame_camera()
+        #fh = open(filename)
+        #string = fh.read()
+        #fh.close()
+        #encoded_string = base64.b64encode(string)
+        #parent._client.send_result(request, encoded_string)
+
+
+class Webcam:
+    def __init__(self,parent,request):
+        self.parent=parent
+        self.request=request
+        self.window = Gtk.Window(title="click a photo")
+        self.window.connect('destroy', self.quit)
+        self.window.set_default_size(500, 400)
+
+        self.drawingarea = Gtk.DrawingArea()
+        #self.window.add(self.drawingarea)
+
+
+        self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.window.add(self.vbox)
+        self.vbox.pack_start(self.drawingarea, True, True, 0)
+
+        self.button1 = Gtk.Button(label="Click Here")
+        self.button1.connect("clicked", self.on_button1_clicked)
+        self.vbox.pack_start(self.button1, False, False, 2)
+        # Create GStreamer pipeline
+        self.pipeline = Gst.Pipeline()
+
+        # Create bus to get events from GStreamer pipeline
+        self.bus = self.pipeline.get_bus()
+        self.bus.add_signal_watch()
+        self.bus.connect('message::error', self.on_error)
+
+        # This is needed to make the video output in our DrawingArea:
+        self.bus.enable_sync_message_emission()
+        self.bus.connect('sync-message::element', self.on_sync_message)
+
+        # Create GStreamer elements
+        self.src = Gst.ElementFactory.make('autovideosrc', None)
+        self.sink = Gst.ElementFactory.make('autovideosink', None)
+
+        # Add elements to the pipeline
+        self.pipeline.add(self.src)
+        self.pipeline.add(self.sink)
+
+        self.src.link(self.sink)
+
+    def on_button1_clicked(self,button):
+        self.image1=self.drawingarea.window.get_image(0, 0, 500, 400)
+	encoded_string = base64.b64encode(self.image1)
+        self.parent._client.send_result(self.request, encoded_string)
+        """
+        win=self.window
+        width, height = win.get_size()
+        pixbuf = Gdk.pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
+
+        # Retrieve the pixel data from the gdk.window attribute (win.window)
+        # of the gtk.window object
+        screenshot = pixbuf.get_from_drawable(win.window, win.get_colormap(), 
+                                          0, 0, 0, 0, width, height)
+        screenshot.save('screenshot.png', 'png')
+
+        #drawable = self.window.get_window()
+        #logging.error("drawable: %s : ",drawable)
+        """
+        # Fetch what we rendered on the drawing area into a pixbuf
+        #pixbuf = Gdk.pixbuf_get_from_window(self.window,0,0,800, 450)
+        # Write the pixbuf as a PNG image to disk
+        #pixbuf.savev('/home/testimage.jpeg', 'jpeg', [], [])
+        self.pipeline.set_state(Gst.State.NULL)
+        Gtk.main_quit()        
+        
+
+    def run(self):
+        self.window.show_all()
+        # You need to get the XID after window.show_all().  You shouldn't get it
+        # in the on_sync_message() handler because threading issues will cause
+        # segfaults there.
+        self.xid = self.drawingarea.get_property('window').get_xid()
+        self.pipeline.set_state(Gst.State.PLAYING)
+        Gtk.main()
+
+    def quit(self, window):
+        self.pipeline.set_state(Gst.State.NULL)
+        Gtk.main_quit()
+
+    def on_sync_message(self, bus, msg):
+        if msg.get_structure().get_name() == 'prepare-window-handle':
+            print('prepare-window-handle')
+            msg.src.set_property('force-aspect-ratio', True)
+            msg.src.set_window_handle(self.xid)
+
+    def on_error(self, bus, msg):
+        print('on_error():', msg.parse_error())
+
+
+#webcam = Webcam()
+#webcam.run()
 
 
 class choose_image:
