@@ -81,9 +81,9 @@ class Webcam:
 
     def on_button1_clicked(self,widget):
 
-        drawable = self.drawingarea.window
+        drawable = self.window
         colormap = drawable.get_colormap()
-        pixbuf = Gtk.Gdk.Pixbuf(Gtk.Gdk.COLORSPACE_RGB, 0, 8, *drawable.get_size())
+        pixbuf = Gdk.Pixbuf(Gtk.Gdk.COLORSPACE_RGB, 0, 8, *drawable.get_size())
         pixbuf = pixbuf.get_from_drawable(drawable, colormap, 0,0,0,0, *drawable.get_size()) 
         pixbuf = pixbuf.scale_simple(800,450, Gtk.Gdk.INTERP_HYPER) # resize
         filename = snapshot_name() + '.jpeg'
