@@ -1,4 +1,6 @@
 import os
+import gi
+gi.require_version('Gst','1.0')
 from gi.repository import Gtk
 from gi.repository import GObject,Gdk, Gst
 from gi.repository import GdkX11, GstVideo
@@ -25,7 +27,7 @@ class Camera:
         chooser.show_image_chooser(parent)
 
     def webcam(self, args, parent, request):
-        webcam = Webcam(parent,request)
+        webcam = Webcam()
         webcam.run()
         #filename = pygame_camera()
         #fh = open(filename)
@@ -36,24 +38,25 @@ class Camera:
 
 
 class Webcam:
-    def __init__(self,parent,request):
-        self.parent=parent
-        self.request=request
+    def __init__(self):
+        #self.parent=parent
+        #self.request=request
         self.window = Gtk.Window(title="click a photo")
         self.window.connect('destroy', self.quit)
-        self.window.set_default_size(500, 400)
+        self.window.set_default_size(800, 450)
 
         self.drawingarea = Gtk.DrawingArea()
         #self.window.add(self.drawingarea)
-
 
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.window.add(self.vbox)
         self.vbox.pack_start(self.drawingarea, True, True, 0)
 
         self.button1 = Gtk.Button(label="Click Here")
+
         self.button1.connect("clicked", self.on_button1_clicked)
-        self.vbox.pack_start(self.button1, False, False, 2)
+        #self.window.add(self.button1)
+        self.vbox.pack_start(self.button1, False,True,0)
         # Create GStreamer pipeline
         self.pipeline = Gst.Pipeline()
 
@@ -76,10 +79,26 @@ class Webcam:
 
         self.src.link(self.sink)
 
-    def on_button1_clicked(self,button):
+    def on_button1_clicked(self,widget):
+
+        drawable = self.drawingarea.window
+        colormap = drawable.get_colormap()
+        pixbuf = Gtk.Gdk.Pixbuf(Gtk.Gdk.COLORSPACE_RGB, 0, 8, *drawable.get_size())
+        pixbuf = pixbuf.get_from_drawable(drawable, colormap, 0,0,0,0, *drawable.get_size()) 
+        pixbuf = pixbuf.scale_simple(800,450, Gtk.Gdk.INTERP_HYPER) # resize
+        filename = snapshot_name() + '.jpeg'
+        pixbuf.save('/home/broot/Documents/image'+filename, 'jpeg')
+        fh = open(filename)
+        string = fh.read()
+        fh.close()
+        encoded_string = base64.b64encode(string)
+        #self.parent._client.send_result(self.request, encoded_string)
+
+        """	
         self.image1=self.drawingarea.window.get_image(0, 0, 500, 400)
 	encoded_string = base64.b64encode(self.image1)
         self.parent._client.send_result(self.request, encoded_string)
+        """
         """
         win=self.window
         width, height = win.get_size()
