@@ -4,6 +4,7 @@ gi.require_version('Gst','1.0')
 from gi.repository import Gtk
 from gi.repository import GObject,Gdk, Gst
 from gi.repository import GdkX11, GstVideo
+from gi.repository import GdkPixbuf
 import base64
 import pygame
 import pygame.camera
@@ -80,10 +81,12 @@ class Webcam:
         self.src.link(self.sink)
 
     def on_button1_clicked(self,widget):
-
-        drawable = self.window
+        #xwininfo=0x6004f0
+        #GdkPixbuf.Pixbuf.get_formats()
+        """
+        drawable = self.drawingarea.get_property('window')
         colormap = drawable.get_colormap()
-        pixbuf = Gdk.Pixbuf(Gtk.Gdk.COLORSPACE_RGB, 0, 8, *drawable.get_size())
+        pixbuf = GdkPixbuf.Pixbuf(Gtk.Gdk.COLORSPACE_RGB, 0, 8, *drawable.get_size())
         pixbuf = pixbuf.get_from_drawable(drawable, colormap, 0,0,0,0, *drawable.get_size()) 
         pixbuf = pixbuf.scale_simple(800,450, Gtk.Gdk.INTERP_HYPER) # resize
         filename = snapshot_name() + '.jpeg'
@@ -92,6 +95,7 @@ class Webcam:
         string = fh.read()
         fh.close()
         encoded_string = base64.b64encode(string)
+        """
         #self.parent._client.send_result(self.request, encoded_string)
 
         """	
@@ -113,10 +117,13 @@ class Webcam:
         #drawable = self.window.get_window()
         #logging.error("drawable: %s : ",drawable)
         """
+        
         # Fetch what we rendered on the drawing area into a pixbuf
-        #pixbuf = Gdk.pixbuf_get_from_window(self.window,0,0,800, 450)
+        drawable = self.drawingarea.get_property('window')
+        pixbuf = Gdk.pixbuf_get_from_window(self.drawingarea.get_property('window'),0,0,800,450)
         # Write the pixbuf as a PNG image to disk
-        #pixbuf.savev('/home/testimage.jpeg', 'jpeg', [], [])
+        pixbuf.savev('/home/broot/Documents/testimage.jpeg', 'jpeg', [], [])
+        
         self.pipeline.set_state(Gst.State.NULL)
         Gtk.main_quit()        
         
