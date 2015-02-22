@@ -29,8 +29,8 @@ class Camera:
 
     def webcam(self, args, parent, request):
         webcam = Webcam()
-        webcam.run()
-        #filename = pygame_camera()
+        webcam.run(parent,request)
+        #filename = webcam.run()
         #fh = open(filename)
         #string = fh.read()
         #fh.close()
@@ -40,8 +40,8 @@ class Camera:
 
 class Webcam:
     def __init__(self):
-        #self.parent=parent
-        #self.request=request
+        self.parent=""
+        self.request=""
         self.window = Gtk.Window(title="click a photo")
         self.window.connect('destroy', self.quit)
         self.window.set_default_size(800, 450)
@@ -123,12 +123,20 @@ class Webcam:
         pixbuf = Gdk.pixbuf_get_from_window(self.drawingarea.get_property('window'),0,0,800,450)
         # Write the pixbuf as a PNG image to disk
         pixbuf.savev('/home/broot/Documents/testimage.jpeg', 'jpeg', [], [])
-        
+        filename = '/home/broot/Documents/testimage.jpeg'
         self.pipeline.set_state(Gst.State.NULL)
-        Gtk.main_quit()        
-        
+        Gtk.main_quit() 
 
-    def run(self):
+        fh = open(filename)
+        string = fh.read()
+        fh.close()
+        encoded_string = base64.b64encode(string)
+        self.parent._client.send_result(self.request, encoded_string)       
+        #return filename  
+
+    def run(self,parent,request):
+        self.parent=parent
+        self.request=request
         self.window.show_all()
         # You need to get the XID after window.show_all().  You shouldn't get it
         # in the on_sync_message() handler because threading issues will cause
